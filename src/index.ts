@@ -20,7 +20,40 @@ app.get("/", apiKeyMiddleware, (req, res) => {
   res.json({ message: "Welcome to the Smile Movies API" });
 });
 app.use("/api/v3/users", userRouter);
+app.get("/proxy", async (req: any, res: any) => {
+  const url = decodeURIComponent(req.query.url);
+  if (!url) return res.status(400).send("URL required");
 
+  try {
+    const proxied = await fetch(url, {
+      headers: {
+        Referer: "https://autoembed.cc/",
+        Origin: "https://autoembed.cc/",
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      },
+    });
+
+    res.set("Content-Type", proxied.headers.get("content-type"));
+    const reader = proxied.body?.getReader();
+    if (!reader) return res.status(500).send("Failed to get reader");
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          controller.enqueue(value);
+        }
+        controller.close();
+      },
+    });
+
+    stream.pipeTo(res.writeableStream);
+  } catch (err) {
+    res.status(500).send("Failed to proxy");
+  }
+});
 app.get("/movie/:tmdbId", async (req, res) => {
   if (isNaN(parseInt(req.params.tmdbId))) {
     res.status(405).json({
@@ -201,9 +234,9 @@ app.get("*", (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Running server with port ${PORT}`);
-});import { error } from "console";
+});
+import { error } from "console";
 import e from "express";
 import { query } from "firebase/firestore";
 import { get } from "http";
 import { join } from "path";
-
