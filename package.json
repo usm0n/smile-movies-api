@@ -18,29 +18,26 @@
   "homepage": "https://github.com/Forge-Team/Smile-Movies-Project#readme",
   "dependencies": {
     "@types/bcrypt": "^5.0.2",
-    "@types/cheerio": "^0.22.35",
     "@types/cookie-parser": "^1.4.8",
     "@types/cors": "^2.8.17",
-    "@types/express": "^5.0.0",
     "@types/jsonwebtoken": "^9.0.7",
-    "@types/luxon": "^3.4.2",
+    "@types/luxon": "^3.6.2",
     "@types/node": "^22.10.5",
-    "@types/node-fetch": "^2.6.12",
     "@types/nodemailer": "^6.4.17",
     "bcrypt": "^5.1.1",
-    "cheerio": "^1.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "firebase": "^11.1.0",
-    "http-proxy-middleware": "^3.0.3",
     "jsonwebtoken": "^9.0.2",
-    "luxon": "^3.5.0",
-    "node-fetch": "^2.7.0",
+    "luxon": "^3.6.1",
     "nodemailer": "^6.9.13",
     "nodemon": "^3.1.0",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1"
   }
 }
