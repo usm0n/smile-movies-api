@@ -443,7 +443,7 @@ export const registerUser = async (req: Request, res: Response) => {
 
 export const loginUser = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body as User;
+    const { email, password, deviceId, deviceName, deviceType } = req.body;
     const user = await getDocs(
       query(usersCollection, where("email", "==", email))
     );
@@ -453,6 +453,22 @@ export const loginUser = async (req: Request, res: Response) => {
       const userData = user.docs[0].data() as User;
       const isMatch = await bcrypt.compare(password, userData.password);
       if (isMatch) {
+        const devices = userData?.devices || [];
+        if (devices.some((d) => d.deviceId !== deviceId)) {
+          await updateDoc(user.docs[0].ref, {
+            devices: [
+              ...devices,
+              {
+                deviceName,
+                deviceType,
+                deviceId,
+                createdAt: getFormattedDateAndTime(),
+                lastLogin: getFormattedDateAndTime(),
+                isActive: false,
+              },
+            ],
+          } as Partial<User>);
+        }
         const jwtToken = jwt.sign(
           {
             uid: user.docs[0].id,
@@ -474,7 +490,6 @@ export const loginUser = async (req: Request, res: Response) => {
         | ErrorMSG);
   }
 };
-
 export const verifyUser = [
   verifyToken,
   async (req: Request, res: Response) => {
