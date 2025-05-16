@@ -13,8 +13,18 @@ export interface DecodedUserRequest extends Request {
 }
 
 export interface Watchlist {
+  poster: string;
   type: string;
   id: string;
+}
+
+export interface Device {
+  deviceName: string;
+  deviceType: string;
+  deviceId: string;
+  isActive: boolean;
+  createdAt: string;
+  lastLogin: string;
 }
 
 export interface User {
@@ -25,11 +35,15 @@ export interface User {
   email: string;
   password: string;
   createdAt: string;
+  lastLogin: string;
   isVerified: boolean;
   isAdmin: boolean;
   isBanned: boolean;
   watchlist: Watchlist[];
   favorites: Watchlist[];
+  recentlyWatched: Watchlist[];
+  devices: Device[];
+  loginType: string;
 }
 
 export interface UserVerifyToken {

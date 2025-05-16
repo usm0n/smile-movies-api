@@ -359,8 +359,18 @@ export const deleteMyself = [
 
 export const registerUser = async (req: Request, res: Response) => {
   try {
-    const { firstname, lastname, email, password, isVerified, profilePic } =
-      req.body as User;
+    const {
+      firstname,
+      lastname,
+      email,
+      password,
+      isVerified,
+      profilePic,
+      deviceName,
+      deviceType,
+      deviceId,
+      loginType,
+    } = req.body;
     const user = await getDocs(
       query(usersCollection, where("email", "==", req.body.email))
     );
@@ -377,11 +387,24 @@ export const registerUser = async (req: Request, res: Response) => {
         email,
         password: hashedPassword,
         createdAt: getFormattedDateAndTime(),
+        lastLogin: getFormattedDateAndTime(),
         isAdmin: false,
         isBanned: false,
         isVerified: isVerified || false,
         watchlist: [],
         favorites: [],
+        recentlyWatched: [],
+        devices: [
+          {
+            deviceName,
+            deviceType,
+            deviceId,
+            isActive: true,
+            createdAt: getFormattedDateAndTime(),
+            lastLogin: getFormattedDateAndTime(),
+          },
+        ],
+        loginType,
       } as Partial<User>);
 
       const newVerifyToken = {
@@ -398,7 +421,7 @@ export const registerUser = async (req: Request, res: Response) => {
       );
 
       await addDoc(tokensCollection, newVerifyToken);
-      
+
       if (!isVerified) {
         await sendMail(
           email,
@@ -650,8 +673,7 @@ export const addToWatchlist = [
   async (req: Request, res: Response) => {
     try {
       const uid = (req as DecodedUserRequest).uid;
-      const movieId = req.params.movieId;
-      const typeMovie = req.params.typeMovie;
+      const { movieId, typeMovie, poster } = req.body;
       const userDoc = doc(usersCollection, uid);
       const user = await getDoc(userDoc);
       if (!user.exists()) {
@@ -670,7 +692,7 @@ export const addToWatchlist = [
           await updateDoc(userDoc, {
             watchlist: [
               ...watchlist,
-              { id: movieId, type: typeMovie } as Watchlist,
+              { id: movieId, type: typeMovie, poster } as Watchlist,
             ],
           });
           res
@@ -725,8 +747,7 @@ export const addToFavorites = [
   async (req: Request, res: Response) => {
     try {
       const uid = (req as DecodedUserRequest).uid;
-      const movieId = req.params.movieId;
-      const typeMovie = req.params.typeMovie;
+      const { movieId, typeMovie, poster } = req.body;
       const userDoc = doc(usersCollection, uid);
       const user = await getDoc(userDoc);
       if (!user.exists()) {
@@ -745,7 +766,7 @@ export const addToFavorites = [
           await updateDoc(userDoc, {
             favorites: [
               ...favorites,
-              { id: movieId, type: typeMovie } as Watchlist,
+              { id: movieId, type: typeMovie, poster } as Watchlist,
             ],
           });
           res
@@ -784,6 +805,186 @@ export const deleteFromFavorites = [
         res
           .status(200)
           .json({ message: "Movie deleted from favorites" } as Message);
+      }
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ message: "Internal server error", error: error.message } as
+          | Message
+          | ErrorMSG);
+    }
+  },
+];
+
+export const addToRecentlyWatched = [
+  verifyToken,
+  async (req: Request, res: Response) => {
+    try {
+      const uid = (req as DecodedUserRequest).uid;
+      const { movieId, typeMovie, poster } = req.body;
+      const userDoc = doc(usersCollection, uid);
+      const user = await getDoc(userDoc);
+      if (!user.exists()) {
+        res.status(404).json({ message: "User not found" } as Message);
+      } else {
+        const recentlyWatched = (user.data() as User)?.recentlyWatched || [];
+        if (
+          recentlyWatched.some(
+            (item) => item.id === movieId && item.type === typeMovie
+          )
+        ) {
+          res
+            .status(400)
+            .json({ message: "Movie already in recently watched" } as Message);
+        } else {
+          await updateDoc(userDoc, {
+            recentlyWatched: [
+              ...recentlyWatched,
+              { id: movieId, type: typeMovie, poster } as Watchlist,
+            ],
+          });
+          res
+            .status(200)
+            .json({ message: "Movie added to recently watched" } as Message);
+        }
+      }
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ message: "Internal server error", error: error.message } as
+          | Message
+          | ErrorMSG);
+    }
+  },
+];
+
+export const deleteFromRecentlyWatched = [
+  verifyToken,
+  async (req: Request, res: Response) => {
+    try {
+      const uid = (req as DecodedUserRequest).uid;
+      const movieId = req.params.movieId;
+      const typeMovie = req.params.typeMovie;
+      const userDoc = doc(usersCollection, uid);
+      const user = await getDoc(userDoc);
+      if (!user.exists()) {
+        res.status(404).json({ message: "User not found" } as Message);
+      } else {
+        const recentlyWatched = (user.data() as User)?.recentlyWatched || [];
+        const newRecentlyWatched = recentlyWatched.filter(
+          (movie) => movie.id !== movieId || movie.type !== typeMovie
+        );
+        await updateDoc(userDoc, {
+          recentlyWatched: newRecentlyWatched,
+        });
+        res
+          .status(200)
+          .json({ message: "Movie deleted from recently watched" } as Message);
+      }
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ message: "Internal server error", error: error.message } as
+          | Message
+          | ErrorMSG);
+    }
+  },
+];
+
+export const lastLogin = [
+  verifyToken,
+  async (req: Request, res: Response) => {
+    try {
+      const uid = (req as DecodedUserRequest).uid;
+      const { deviceId } = req.body;
+      const userDoc = doc(usersCollection, uid);
+      const user = await getDoc(userDoc);
+      if (!user.exists()) {
+        res.status(404).json({ message: "User not found" } as Message);
+      } else {
+        const devices = (user.data() as User)?.devices || [];
+        const updatedDevices = devices.map((device) => {
+          if (device.deviceId === deviceId) {
+            return {
+              ...device,
+              lastLogin: getFormattedDateAndTime(),
+            };
+          }
+          return device;
+        });
+        await updateDoc(userDoc, {
+          devices: updatedDevices,
+          lastLogin: getFormattedDateAndTime(),
+        } as Partial<User>);
+        res.status(200).json({ message: "Last login updated" } as Message);
+      }
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ message: "Internal server error", error: error.message } as
+          | Message
+          | ErrorMSG);
+    }
+  },
+];
+export const addDevice = [
+  verifyToken,
+  async (req: Request, res: Response) => {
+    try {
+      const uid = (req as DecodedUserRequest).uid;
+      const { deviceName, deviceType, deviceId } = req.body;
+      const userDoc = doc(usersCollection, uid);
+      const user = await getDoc(userDoc);
+      if (!user.exists()) {
+        res.status(404).json({ message: "User not found" } as Message);
+      } else {
+        const devices = (user.data() as User)?.devices || [];
+        if (devices.some((d) => d.deviceId === deviceId)) {
+          res.status(400).json({ message: "Device already added" } as Message);
+        } else {
+          await updateDoc(userDoc, {
+            devices: [
+              ...devices,
+              {
+                deviceName,
+                deviceType,
+                deviceId,
+                createdAt: getFormattedDateAndTime(),
+                lastLogin: getFormattedDateAndTime(),
+                isActive: false,
+              },
+            ],
+          } as Partial<User>);
+          res.status(200).json({ message: "Device added" } as Message);
+        }
+      }
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ message: "Internal server error", error: error.message } as
+          | Message
+          | ErrorMSG);
+    }
+  },
+];
+
+export const deleteDevice = [
+  verifyToken,
+  async (req: Request, res: Response) => {
+    try {
+      const uid = (req as DecodedUserRequest).uid;
+      const deviceId = req.params.deviceId;
+      const userDoc = doc(usersCollection, uid);
+      const user = await getDoc(userDoc);
+      if (!user.exists()) {
+        res.status(404).json({ message: "User not found" } as Message);
+      } else {
+        const devices = (user.data() as User)?.devices || [];
+        const newDevices = devices.filter((d) => d.deviceId !== deviceId);
+        await updateDoc(userDoc, {
+          devices: newDevices,
+        } as Partial<User>);
+        res.status(200).json({ message: "Device deleted" } as Message);
       }
     } catch (error: any) {
       res

@@ -30,16 +30,27 @@ router.post(
 
 router.post("/resetPassword/:email/:token", userController.resetPassword);
 
-router.post("/watchlist/:typeMovie/:movieId", userController.addToWatchlist);
+router.post("/watchlist", userController.addToWatchlist);
 router.delete(
   "/watchlist/:typeMovie/:movieId",
   userController.deleteFromWatchlist
 );
 
-router.post("/favorites/:typeMovie/:movieId", userController.addToFavorites);
+router.post("/favorites/", userController.addToFavorites);
 router.delete(
   "/favorites/:typeMovie/:movieId",
   userController.deleteFromFavorites
 );
+
+router.post("/recentlyWatched", userController.addToRecentlyWatched);
+router.delete(
+  "/recentlyWatched/:typeMovie/:movieId",
+  userController.deleteFromRecentlyWatched
+);
+
+router.post("/lastLogin", userController.lastLogin);
+
+router.post("/addDevice", userController.addDevice);
+router.delete("/deleteDevice/:deviceId", userController.deleteDevice);
 
 export default router;
