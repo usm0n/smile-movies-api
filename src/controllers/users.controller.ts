@@ -454,7 +454,7 @@ export const loginUser = async (req: Request, res: Response) => {
       const isMatch = await bcrypt.compare(password, userData.password);
       if (isMatch) {
         const devices = userData?.devices || [];
-        if (devices.some((d) => d.deviceId !== deviceId)) {
+        if (devices.filter((d) => d.deviceId == deviceId).length == 0) {
           await updateDoc(user.docs[0].ref, {
             devices: [
               ...devices,
