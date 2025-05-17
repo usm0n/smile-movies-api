@@ -370,6 +370,7 @@ export const registerUser = async (req: Request, res: Response) => {
       deviceType,
       deviceId,
       loginType,
+      deviceLocation,
     } = req.body;
     const user = await getDocs(
       query(usersCollection, where("email", "==", req.body.email))
@@ -402,6 +403,17 @@ export const registerUser = async (req: Request, res: Response) => {
             isActive: true,
             createdAt: getFormattedDateAndTime(),
             lastLogin: getFormattedDateAndTime(),
+            location: {
+              latitude: deviceLocation.latitude,
+              longitude: deviceLocation.longitude,
+              continent: deviceLocation.continent,
+              country: deviceLocation.country,
+              state: deviceLocation.state,
+              county: deviceLocation.county,
+              road: deviceLocation.road,
+              town: deviceLocation.town,
+              lastSeen: getFormattedDateAndTime(),
+            },
           },
         ],
         loginType,
@@ -443,7 +455,14 @@ export const registerUser = async (req: Request, res: Response) => {
 
 export const loginUser = async (req: Request, res: Response) => {
   try {
-    const { email, password, deviceId, deviceName, deviceType } = req.body;
+    const {
+      email,
+      password,
+      deviceId,
+      deviceName,
+      deviceType,
+      deviceLocation,
+    } = req.body;
     const user = await getDocs(
       query(usersCollection, where("email", "==", email))
     );
@@ -465,7 +484,44 @@ export const loginUser = async (req: Request, res: Response) => {
                 createdAt: getFormattedDateAndTime(),
                 lastLogin: getFormattedDateAndTime(),
                 isActive: false,
+                location: {
+                  latitude: deviceLocation.latitude,
+                  longitude: deviceLocation.longitude,
+                  continent: deviceLocation.continent,
+                  country: deviceLocation.country,
+                  state: deviceLocation.state,
+                  county: deviceLocation.county,
+                  road: deviceLocation.road,
+                  town: deviceLocation.town,
+                  lastSeen: getFormattedDateAndTime(),
+                },
               },
+            ],
+          } as Partial<User>);
+        } else {
+          await updateDoc(user.docs[0].ref, {
+            devices: [
+              ...devices.map((d) => {
+                if (d.deviceId == deviceId) {
+                  return {
+                    ...d,
+                    lastLogin: getFormattedDateAndTime(),
+                    location: {
+                      latitude: deviceLocation.latitude,
+                      longitude: deviceLocation.longitude,
+                      continent: deviceLocation.continent,
+                      country: deviceLocation.country,
+                      state: deviceLocation.state,
+                      county: deviceLocation.county,
+                      road: deviceLocation.road,
+                      town: deviceLocation.town,
+                      lastSeen: getFormattedDateAndTime(),
+                    },
+                  };
+                } else {
+                  return d;
+                }
+              }),
             ],
           } as Partial<User>);
         }

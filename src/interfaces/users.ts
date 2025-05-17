@@ -18,6 +18,18 @@ export interface Watchlist {
   id: string;
 }
 
+export interface Location {
+  latitude: number;
+  longitude: number;
+  continent: string;
+  country: string;
+  state: string;
+  county: string;
+  road: string;
+  town: string;
+  lastSeen: string;
+}
+
 export interface Device {
   deviceName: string;
   deviceType: string;
@@ -25,6 +37,7 @@ export interface Device {
   isActive: boolean;
   createdAt: string;
   lastLogin: string;
+  location: Location;
 }
 
 export interface User {
