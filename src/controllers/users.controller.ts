@@ -411,7 +411,6 @@ export const registerUser = async (req: Request, res: Response) => {
               state: deviceLocation.state,
               county: deviceLocation.county,
               road: deviceLocation.road,
-              town: deviceLocation.town,
               lastSeen: getFormattedDateAndTime(),
             },
           },
@@ -492,7 +491,6 @@ export const loginUser = async (req: Request, res: Response) => {
                   state: deviceLocation.state,
                   county: deviceLocation.county,
                   road: deviceLocation.road,
-                  town: deviceLocation.town,
                   lastSeen: getFormattedDateAndTime(),
                 },
               },
@@ -514,7 +512,6 @@ export const loginUser = async (req: Request, res: Response) => {
                       state: deviceLocation.state,
                       county: deviceLocation.county,
                       road: deviceLocation.road,
-                      town: deviceLocation.town,
                       lastSeen: getFormattedDateAndTime(),
                     },
                   };

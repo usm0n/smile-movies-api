@@ -26,7 +26,6 @@ export interface Location {
   state: string;
   county: string;
   road: string;
-  town: string;
   lastSeen: string;
 }
 
