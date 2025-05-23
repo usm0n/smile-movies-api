@@ -34,6 +34,7 @@
     "luxon": "^3.6.1",
     "nodemailer": "^6.9.13",
     "nodemon": "^3.1.0",
+    "request": "^2.88.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0"
   },
