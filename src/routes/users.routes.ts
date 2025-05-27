@@ -36,18 +36,6 @@ router.delete(
   userController.deleteFromWatchlist
 );
 
-router.post("/favorites/", userController.addToFavorites);
-router.delete(
-  "/favorites/:typeMovie/:movieId",
-  userController.deleteFromFavorites
-);
-
-router.post("/recentlyWatched", userController.addToRecentlyWatched);
-router.delete(
-  "/recentlyWatched/:typeMovie/:movieId",
-  userController.deleteFromRecentlyWatched
-);
-
 router.post("/lastLogin", userController.lastLogin);
 
 router.post("/addDevice", userController.addDevice);
