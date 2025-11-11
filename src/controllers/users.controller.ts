@@ -741,7 +741,7 @@ export const addToWatchlist = [
   async (req: Request, res: Response) => {
     try {
       const uid = (req as DecodedUserRequest).uid;
-      const { movieId, typeMovie, poster } = req.body;
+      const { movieId, typeMovie, poster, status, duration, currentTime, season, episode } = req.body;
       const userDoc = doc(usersCollection, uid);
       const user = await getDoc(userDoc);
       if (!user.exists()) {
@@ -753,14 +753,30 @@ export const addToWatchlist = [
             (item) => item.id === movieId && item.type === typeMovie
           )
         ) {
+          await updateDoc(userDoc, {
+            watchlist: watchlist.map((item) => {
+              if (item.id === movieId && item.type === typeMovie) {
+                return {
+                  ...item,
+                  poster,
+                  status,
+                  duration,
+                  currentTime,
+                  season,
+                  episode
+                };
+              }
+              return item;
+            }),
+          });
           res
-            .status(400)
-            .json({ message: "Movie already in watchlist" } as Message);
+            .status(200)
+            .json({ message: "Watchlist item updated" } as Message);
         } else {
           await updateDoc(userDoc, {
             watchlist: [
               ...watchlist,
-              { id: movieId, type: typeMovie, poster } as Watchlist,
+              { id: movieId, type: typeMovie, poster, status, duration, currentTime, episode, season } as Watchlist,
             ],
           });
           res

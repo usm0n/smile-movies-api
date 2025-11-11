@@ -15,7 +15,12 @@ export interface DecodedUserRequest extends Request {
 export interface Watchlist {
   poster: string;
   type: string;
+  status: string;
+  duration?: number;
+  currentTime?: number;
   id: string;
+  season?: number,
+  episode?: number
 }
 
 export interface Location {
@@ -63,4 +68,4 @@ export interface UserVerifyToken {
   token: string;
 }
 
-export interface GoogleUserResponse {}
+export interface GoogleUserResponse { }
