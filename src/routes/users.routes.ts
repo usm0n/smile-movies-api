@@ -18,6 +18,7 @@ router.delete("/myself", userController.deleteMyself);
 
 router.post("/register", userController.registerUser);
 router.post("/login", userController.loginUser);
+router.post("/logout", userController.logoutUser);
 
 router.post("/verify/:token", userController.verifyUser);
 router.post("/resendVericationToken", userController.resendVerificationToken);
@@ -25,7 +26,7 @@ router.post("/resendVericationToken", userController.resendVerificationToken);
 router.post("/forgotPassword", userController.forgotPassword);
 router.post(
   "/resendForgotPasswordToken",
-  userController.resendForgotPasswordToken
+  userController.resendForgotPasswordToken,
 );
 
 router.post("/resetPassword/:email/:token", userController.resetPassword);
@@ -33,7 +34,7 @@ router.post("/resetPassword/:email/:token", userController.resetPassword);
 router.post("/watchlist", userController.addToWatchlist);
 router.delete(
   "/watchlist/:typeMovie/:movieId",
-  userController.deleteFromWatchlist
+  userController.deleteFromWatchlist,
 );
 
 router.post("/lastLogin", userController.lastLogin);

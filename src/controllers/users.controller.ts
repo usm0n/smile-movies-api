@@ -143,7 +143,7 @@ export const updateUserById = [
         }
         if (email && email !== user.data().email) {
           const user = await getDocs(
-            query(usersCollection, where("email", "==", email))
+            query(usersCollection, where("email", "==", email)),
           );
           if (!user.empty) {
             return res
@@ -185,7 +185,7 @@ export const updateUserByEmail = [
       const currentEmail = req.params.email;
       const usersQuery = query(
         usersCollection,
-        where("email", "==", currentEmail)
+        where("email", "==", currentEmail),
       );
       const usersDocs = await getDocs(usersQuery);
       if (usersDocs.empty) {
@@ -199,7 +199,7 @@ export const updateUserByEmail = [
         }
         if (email && email !== usersDocs.docs[0].data().email) {
           const user = await getDocs(
-            query(usersCollection, where("email", "==", email))
+            query(usersCollection, where("email", "==", email)),
           );
           if (!user.empty) {
             return res
@@ -253,7 +253,7 @@ export const updateMyself = [
         }
         if (email && email !== user.data().email) {
           const user = await getDocs(
-            query(usersCollection, where("email", "==", email))
+            query(usersCollection, where("email", "==", email)),
           );
           if (!user.empty) {
             return res
@@ -373,7 +373,7 @@ export const registerUser = async (req: Request, res: Response) => {
       deviceLocation,
     } = req.body;
     const user = await getDocs(
-      query(usersCollection, where("email", "==", req.body.email))
+      query(usersCollection, where("email", "==", req.body.email)),
     );
     if (!user.empty) {
       res.status(409).json({ message: "User already exists" } as Message);
@@ -428,7 +428,8 @@ export const registerUser = async (req: Request, res: Response) => {
           isAdmin: false,
           isVerified: isVerified || false,
         } as DecodedUser,
-        process.env.JWT_SECRET as string
+        process.env.JWT_SECRET as string,
+        { expiresIn: "7d" },
       );
 
       await addDoc(tokensCollection, newVerifyToken);
@@ -437,11 +438,17 @@ export const registerUser = async (req: Request, res: Response) => {
         await sendMail(
           email,
           "Verify your email",
-          `Your verification token: ${newVerifyToken.token}`
+          `Your verification token: ${newVerifyToken.token}`,
         );
       }
-
-      res.status(201).json({ token: jwtToken });
+      res.cookie("authToken", jwtToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: "/",
+      });
+      res.status(201).json({ message: "User registered successfully" });
     }
   } catch (error: any) {
     res
@@ -463,7 +470,7 @@ export const loginUser = async (req: Request, res: Response) => {
       deviceLocation,
     } = req.body;
     const user = await getDocs(
-      query(usersCollection, where("email", "==", email))
+      query(usersCollection, where("email", "==", email)),
     );
     if (user.empty) {
       res.status(404).json({ message: "User not found" } as Message);
@@ -528,13 +535,33 @@ export const loginUser = async (req: Request, res: Response) => {
             isAdmin: userData.isAdmin,
             isVerified: userData.isVerified,
           } as DecodedUser,
-          process.env.JWT_SECRET as string
+          process.env.JWT_SECRET as string,
+          { expiresIn: "7d" },
         );
-        res.status(200).json({ token: jwtToken });
+        res.cookie("authToken", jwtToken, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "lax",
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+          path: "/",
+        });
+        res.status(200).json({ message: "Login successful" });
       } else {
         res.status(401).json({ message: "Invalid credentials" } as Message);
       }
     }
+  } catch (error: any) {
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message } as
+        | Message
+        | ErrorMSG);
+  }
+};
+export const logoutUser = async (req: Request, res: Response) => {
+  try {
+    res.clearCookie("authToken", { path: "/" });
+    res.status(200).json({ message: "Logout successful" } as Message);
   } catch (error: any) {
     res
       .status(500)
@@ -561,7 +588,7 @@ export const verifyUser = [
         const tokenQuery = query(
           tokensCollection,
           where("uid", "==", uid),
-          where("token", "==", req.params.token)
+          where("token", "==", req.params.token),
         );
         const tokenDocs = await getDocs(tokenQuery);
 
@@ -613,7 +640,7 @@ export const resendVerificationToken = [
         await sendMail(
           (user.data() as User).email,
           "Verify your email",
-          `Your verification token: ${newToken.token}`
+          `Your verification token: ${newToken.token}`,
         );
         res.status(200).json({ message: "Verification token sent" } as Message);
       }
@@ -631,7 +658,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
   try {
     const email = req.body.email;
     const user = await getDocs(
-      query(usersCollection, where("email", "==", email))
+      query(usersCollection, where("email", "==", email)),
     );
     if (user.empty) {
       res.status(404).json({ message: "User not found" } as Message);
@@ -645,7 +672,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
       await sendMail(
         email,
         "Reset your password",
-        `Reset your password by visiting this link: ${resetURL}`
+        `Reset your password by visiting this link: ${resetURL}`,
       );
       res.status(200).json({ message: "Reset password link sent" } as Message);
     }
@@ -660,19 +687,19 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
 export const resendForgotPasswordToken = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const email = req.body.email;
     const user = await getDocs(
-      query(usersCollection, where("email", "==", email))
+      query(usersCollection, where("email", "==", email)),
     );
     if (user.empty) {
       res.status(404).json({ message: "User not found" } as Message);
     } else {
       const tokenQuery = query(
         resetTokensCollection,
-        where("uid", "==", user.docs[0].id)
+        where("uid", "==", user.docs[0].id),
       );
       const tokenDocs = await getDocs(tokenQuery);
       if (!tokenDocs.empty) {
@@ -687,7 +714,7 @@ export const resendForgotPasswordToken = async (
       await sendMail(
         email,
         "Reset your password",
-        `Reset your password by visiting this link: ${resetURL}`
+        `Reset your password by visiting this link: ${resetURL}`,
       );
       res.status(200).json({ message: "Reset password link sent" } as Message);
     }
@@ -704,7 +731,7 @@ export const resetPassword = async (req: Request, res: Response) => {
   try {
     const email = req.params.email;
     const user = await getDocs(
-      query(usersCollection, where("email", "==", email))
+      query(usersCollection, where("email", "==", email)),
     );
     if (user.empty) {
       res.status(404).json({ message: "User not found" } as Message);
@@ -712,7 +739,7 @@ export const resetPassword = async (req: Request, res: Response) => {
       const tokenQuery = query(
         resetTokensCollection,
         where("uid", "==", user.docs[0].id),
-        where("token", "==", req.params.token)
+        where("token", "==", req.params.token),
       );
       const tokenDocs = await getDocs(tokenQuery);
       if (tokenDocs.empty) {
@@ -741,7 +768,16 @@ export const addToWatchlist = [
   async (req: Request, res: Response) => {
     try {
       const uid = (req as DecodedUserRequest).uid;
-      const { movieId, typeMovie, poster, status, duration, currentTime, season, episode } = req.body;
+      const {
+        movieId,
+        typeMovie,
+        poster,
+        status,
+        duration,
+        currentTime,
+        season,
+        episode,
+      } = req.body;
       const userDoc = doc(usersCollection, uid);
       const user = await getDoc(userDoc);
       if (!user.exists()) {
@@ -750,7 +786,7 @@ export const addToWatchlist = [
         const watchlist: Watchlist[] = (user.data() as User)?.watchlist || [];
         if (
           watchlist.some(
-            (item) => item.id === movieId && item.type === typeMovie
+            (item) => item.id === movieId && item.type === typeMovie,
           )
         ) {
           await updateDoc(userDoc, {
@@ -763,7 +799,7 @@ export const addToWatchlist = [
                   duration,
                   currentTime,
                   season,
-                  episode
+                  episode,
                 };
               }
               return item;
@@ -776,7 +812,16 @@ export const addToWatchlist = [
           await updateDoc(userDoc, {
             watchlist: [
               ...watchlist,
-              { id: movieId, type: typeMovie, poster, status, duration, currentTime, episode, season } as Watchlist,
+              {
+                id: movieId,
+                type: typeMovie,
+                poster,
+                status,
+                duration,
+                currentTime,
+                episode,
+                season,
+              } as Watchlist,
             ],
           });
           res
@@ -808,7 +853,7 @@ export const deleteFromWatchlist = [
       } else {
         const watchlist = (user.data() as User)?.watchlist || [];
         const newWatchlist = watchlist.filter(
-          (movie) => movie.id !== movieId || movie.type !== typeMovie
+          (movie) => movie.id !== movieId || movie.type !== typeMovie,
         );
         await updateDoc(userDoc, {
           watchlist: newWatchlist,
