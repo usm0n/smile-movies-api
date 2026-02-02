@@ -442,6 +442,7 @@ export const registerUser = async (req: Request, res: Response) => {
         );
       }
       res.cookie("authToken", jwtToken, {
+        domain: `${process.env.CLIENT_URL?.replace("https://", ".")}`,
         httpOnly: true,
         secure: true,
         sameSite: "lax",
