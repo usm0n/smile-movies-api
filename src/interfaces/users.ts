@@ -4,12 +4,14 @@ export interface DecodedUser {
   uid: string;
   isAdmin: boolean;
   isVerified: boolean;
+  user: User;
 }
 
 export interface DecodedUserRequest extends Request {
   uid: string;
   isAdmin: boolean;
   isVerified: boolean;
+  user: User;
 }
 
 export interface Watchlist {
@@ -19,8 +21,8 @@ export interface Watchlist {
   duration?: number;
   currentTime?: number;
   id: string;
-  season?: number,
-  episode?: number
+  season?: number;
+  episode?: number;
 }
 
 export interface Location {
@@ -68,4 +70,4 @@ export interface UserVerifyToken {
   token: string;
 }
 
-export interface GoogleUserResponse { }
+export interface GoogleUserResponse {}

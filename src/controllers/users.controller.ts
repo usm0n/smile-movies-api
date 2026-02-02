@@ -560,17 +560,16 @@ export const loginUser = async (req: Request, res: Response) => {
         | ErrorMSG);
   }
 };
-export const logoutUser = async (req: Request, res: Response) => {
-  try {
-    res.clearCookie("authToken", { path: "/" });
-    res.status(200).json({ message: "Logout successful" } as Message);
-  } catch (error: any) {
-    res
-      .status(500)
-      .json({ message: "Internal server error", error: error.message } as
-        | Message
-        | ErrorMSG);
-  }
+export const logoutUser = (req: Request, res: Response) => {
+  res.clearCookie("authToken", {
+    domain: `${process.env.CLIENT_URL?.replace("https://", ".")}`,
+    path: "/",
+    secure: true,
+    httpOnly: true,
+    sameSite: "lax",
+  });
+
+  res.status(200).json({ message: "Logged out successfully" });
 };
 export const verifyUser = [
   verifyToken,

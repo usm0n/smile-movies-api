@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import { DecodedUser, DecodedUserRequest } from "../interfaces/users";
+import { DecodedUser, DecodedUserRequest, User } from "../interfaces/users";
 import { Message } from "../interfaces/messages";
 
 const secretKey = process.env.JWT_SECRET || "";
@@ -8,10 +8,9 @@ const secretKey = process.env.JWT_SECRET || "";
 export const verifyToken = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
-  const token = req.header("Authorization");
-
+  const token = req.cookies.authToken
   if (!token) {
     res.status(401).json({ message: "No token provided user" } as Message);
   } else {
@@ -29,10 +28,10 @@ export const verifyToken = (
 export const verifyAdminToken = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
-    const token = req.header("Authorization");
+    const token = req.cookies.authToken
 
     if (!token) {
       res.status(401).json({ message: "No token provided admin" } as Message);
