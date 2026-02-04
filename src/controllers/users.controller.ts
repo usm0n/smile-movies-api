@@ -442,9 +442,12 @@ export const registerUser = async (req: Request, res: Response) => {
         );
       }
       res.cookie("authToken", jwtToken, {
-        domain: `${process.env.CLIENT_URL?.replace("https://", ".")}`,
-        httpOnly: true,
-        secure: true,
+        domain:
+          process.env.NODE_ENV === "production"
+            ? `${process.env.CLIENT_URL?.replace("https://", ".")}`
+            : undefined,
+        httpOnly: process.env.NODE_ENV === "production",
+        secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         maxAge: 7 * 24 * 60 * 60 * 1000,
         path: "/",
@@ -540,9 +543,12 @@ export const loginUser = async (req: Request, res: Response) => {
           { expiresIn: "7d" },
         );
         res.cookie("authToken", jwtToken, {
-          domain: `${process.env.CLIENT_URL?.replace("https://", ".")}`,
-          httpOnly: true,
-          secure: true,
+          domain:
+            process.env.NODE_ENV === "production"
+              ? `${process.env.CLIENT_URL?.replace("https://", ".")}`
+              : undefined,
+          httpOnly: process.env.NODE_ENV === "production",
+          secure: process.env.NODE_ENV === "production",
           sameSite: "lax",
           maxAge: 7 * 24 * 60 * 60 * 1000,
           path: "/",
@@ -562,10 +568,13 @@ export const loginUser = async (req: Request, res: Response) => {
 };
 export const logoutUser = (req: Request, res: Response) => {
   res.clearCookie("authToken", {
-    domain: `${process.env.CLIENT_URL?.replace("https://", ".")}`,
+    domain:
+      process.env.NODE_ENV === "production"
+        ? `${process.env.CLIENT_URL?.replace("https://", ".")}`
+        : undefined,
     path: "/",
-    secure: true,
-    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    httpOnly: process.env.NODE_ENV === "production",
     sameSite: "lax",
   });
 
