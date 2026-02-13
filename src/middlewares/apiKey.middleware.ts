@@ -12,7 +12,7 @@ function apiKeyMiddleware(req: Request, res: Response, next: NextFunction) {
       res.status(403).send("Forbidden");
     }
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 }
 

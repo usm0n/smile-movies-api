@@ -1,35 +1,37 @@
 import { Router } from "express";
-import * as userController from "../controllers/users.controller";
+import * as userController from "../controllers/user/users.controller";
+import * as authUserController from "../controllers/user/auth/auth.users.controller"
+import * as adminController from "../controllers/admin/admin.controller"
 
 const router = Router();
 
-router.get("/", userController.getAllUsers);
-router.get("/id/:id", userController.getUserById);
-router.get("/email/:email", userController.getUserByEmail);
+router.get("/", adminController.getAllUsers);
+router.get("/id/:id", adminController.getUserById);
+router.get("/email/:email", adminController.getUserByEmail);
 router.get("/myself", userController.getMyself);
 
-router.put("/id/:id", userController.updateUserById);
-router.put("/email/:email", userController.updateUserByEmail);
+router.put("/id/:id", adminController.updateUserById);
+router.put("/email/:email", adminController.updateUserByEmail);
 router.put("/myself", userController.updateMyself);
 
-router.delete("/id/:id", userController.deleteUserById);
-router.delete("/email/:email", userController.deleteUserByEmail);
+router.delete("/id/:id", adminController.deleteUserById);
+router.delete("/email/:email", adminController.deleteUserByEmail);
 router.delete("/myself", userController.deleteMyself);
 
-router.post("/register", userController.registerUser);
-router.post("/login", userController.loginUser);
-router.post("/logout", userController.logoutUser);
+router.post("/register", authUserController.registerUser);
+router.post("/login", authUserController.loginUser);
+router.post("/logout", authUserController.logoutUser);
 
-router.post("/verify/:token", userController.verifyUser);
-router.post("/resendVericationToken", userController.resendVerificationToken);
+router.post("/verify/:token", authUserController.verifyUser);
+router.post("/resendVericationToken", authUserController.resendVerificationToken);
 
-router.post("/forgotPassword", userController.forgotPassword);
+router.post("/forgotPassword", authUserController.forgotPassword);
 router.post(
   "/resendForgotPasswordToken",
-  userController.resendForgotPasswordToken,
+  authUserController.resendForgotPasswordToken,
 );
 
-router.post("/resetPassword/:email/:token", userController.resetPassword);
+router.post("/resetPassword/:email/:token", authUserController.resetPassword);
 
 router.post("/watchlist", userController.addToWatchlist);
 router.delete(

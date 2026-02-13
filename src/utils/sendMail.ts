@@ -21,6 +21,6 @@ export const sendMail = async (email: string, subject: string, text: string): Pr
     });
     console.log("Email sent successfully");
   } catch (error) {
-    console.log("Email sent error: " + error);
+    console.error(error);
   }
 };
