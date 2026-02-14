@@ -1,4 +1,5 @@
 import {
+  addDoc,
   collection,
   deleteDoc,
   doc,
@@ -7,6 +8,7 @@ import {
   query,
   updateDoc,
   where,
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "../../config";
 import { Request, Response } from "express";
@@ -18,8 +20,11 @@ import {
 } from "../../interfaces/users";
 import { getFormattedDateAndTime } from "../../utils/defaults";
 import "dotenv/config";
+import crypto from "crypto"
+import { sendMail } from "../../utils/sendMail";
 
 const usersCollection = collection(db, "users");
+const activateDeviceTokensCollection = collection(db, "deviceTokens")
 
 export const getMyself = [
   verifyToken,
@@ -315,3 +320,173 @@ export const deleteDevice = [
     }
   },
 ];
+
+export const activateDevice = [
+  verifyToken,
+  async (req: Request, res: Response) => {
+    try {
+      const uid = (req as DecodedUserRequest).uid;
+      const deviceId = req.params.deviceId;
+
+      if (!deviceId) {
+        return res.status(400).json({ message: "DeviceId is required" });
+      }
+
+      const userDoc = doc(usersCollection, uid);
+      const userSnap = await getDoc(userDoc);
+
+      if (!userSnap.exists()) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const userData = userSnap.data() as User;
+      const devices = userData.devices || [];
+
+      const deviceExists = devices.some(d => d.deviceId === deviceId);
+      if (!deviceExists) {
+        return res.status(404).json({ message: "Device not found in user profile" });
+      }
+
+      if (devices.some(d => d.deviceId === deviceId && d.isActive === true)) {
+        return res.status(400).json({ message: "Device already activated" });
+      }
+
+      const updatedDevices = devices.map((device) =>
+        device.deviceId === deviceId ? { ...device, isActive: true } : device
+      );
+
+      await updateDoc(userDoc, { devices: updatedDevices });
+
+      return res.status(200).json({ message: "Device activated successfully" });
+
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
+];
+
+export const requestActivateMyDevice = [
+  verifyToken,
+  async (req: Request, res: Response) => {
+    try {
+      const uid = (req as DecodedUserRequest).uid;
+      const { deviceId, email } = req.params;
+
+      if (!deviceId || !email) {
+        return res.status(400).json({ message: "DeviceId and Email are required" });
+      }
+
+      const userDoc = doc(usersCollection, uid);
+      const userSnap = await getDoc(userDoc);
+
+      if (!userSnap.exists()) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const userData = userSnap.data() as User;
+      const device = (userData?.devices || []).find((d) => d.deviceId === deviceId);
+
+      if (!device) {
+        return res.status(404).json({ message: "Device not found in your account" });
+      }
+
+      const token = crypto.randomBytes(32).toString("hex");
+
+      const activateToken = {
+        uid,
+        deviceId,
+        token,
+        createdAt: new Date(),
+        used: false
+      };
+
+      await addDoc(activateDeviceTokensCollection, activateToken);
+
+      const activateDeviceURL = `${process.env.CLIENT_URL}/auth/activate-device?email=${email}&deviceId=${deviceId}&token=${token}`;
+
+      await sendMail(
+        email,
+        "Security Alert: Device Activation Requested",
+        `Dear ${userData?.firstname},
+
+        A request was made to grant high-level permissions to: ${device.deviceName} (${device.deviceType}).
+
+        If you approve, this device will be able to:
+         - Manage other devices
+         - Change personal details
+         - Delete your account
+        
+        Click here to activate (Link expires in 30 minutes): ${activateDeviceURL}
+        
+        If this wasn't you, please secure your account immediately.
+        
+        Smile Movies Team`
+      );
+
+      res.status(200).json({ message: "Activation link sent to your email" });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  }
+];
+
+
+export const verifyActivateDevice = async (req: Request, res: Response) => {
+  try {
+    const { email, deviceId, token } = req.query;
+
+    if (!email || !deviceId || !token) {
+      return res.status(400).json({ message: "Invalid activation link" });
+    }
+
+    const q = query(
+      activateDeviceTokensCollection,
+      where("token", "==", token),
+      where("deviceId", "==", deviceId),
+      where("used", "==", false)
+    );
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      return res.status(400).json({ message: "Token is invalid or has already been used" });
+    }
+
+    const tokenDoc = querySnapshot.docs[0];
+    const tokenData = tokenDoc.data();
+
+    const expiryTime = 30 * 60 * 1000;
+    const isExpired = Date.now() - tokenData.createdAt.toDate().getTime() > expiryTime;
+
+    if (isExpired) {
+      return res.status(400).json({ message: "Activation link has expired" });
+    }
+
+    const userDocRef = doc(usersCollection, tokenData.uid);
+    const userSnap = await getDoc(userDocRef);
+
+    if (!userSnap.exists()) {
+      return res.status(404).json({ message: "User no longer exists" });
+    }
+
+    const userData = userSnap.data() as User;
+    const updatedDevices = userData.devices.map((d) => {
+      if (d.deviceId === deviceId) {
+        return { ...d, isActivated: true };
+      }
+      return d;
+    });
+
+    const batch = writeBatch(db);
+    batch.update(userDocRef, { devices: updatedDevices });
+    batch.update(tokenDoc.ref, { used: true });
+
+    await batch.commit();
+
+    res.status(200).json({ message: "Device successfully activated!" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};

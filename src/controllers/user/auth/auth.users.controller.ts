@@ -111,7 +111,7 @@ export const registerUser = async (req: Request, res: Response) => {
             res.status(201).json({ message: "User registered successfully" });
         }
     } catch (error) {
-            console.error(error);
+        console.error(error);
         res
             .status(500)
             .json({ message: "Internal server error" });
@@ -213,7 +213,7 @@ export const loginUser = async (req: Request, res: Response) => {
             }
         }
     } catch (error) {
-            console.error(error);
+        console.error(error);
         res
             .status(500)
             .json({ message: "Internal server error" });
@@ -339,7 +339,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
             res.status(200).json({ message: "Reset password link sent" });
         }
     } catch (error) {
-            console.error(error);
+        console.error(error);
         res
             .status(500)
             .json({ message: "Internal server error" });
@@ -380,7 +380,7 @@ export const resendForgotPasswordToken = async (
             res.status(200).json({ message: "Reset password link sent" });
         }
     } catch (error) {
-            console.error(error);
+        console.error(error);
         res
             .status(500)
             .json({ message: "Internal server error" });
@@ -415,7 +415,7 @@ export const resetPassword = async (req: Request, res: Response) => {
             }
         }
     } catch (error) {
-            console.error(error);
+        console.error(error);
         res
             .status(500)
             .json({ message: "Internal server error" });
