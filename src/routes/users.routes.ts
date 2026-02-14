@@ -43,5 +43,8 @@ router.post("/lastLogin", userController.lastLogin);
 
 router.post("/addDevice", userController.addDevice);
 router.delete("/deleteDevice/:deviceId", userController.deleteDevice);
+router.post("/activateDevice/:deviceId", userController.activateDevice);
+router.post("/requestActivateDevice/:email/:deviceId", userController.requestActivateMyDevice);
+router.post("/verifyDevice/:email/:deviceId/:token", userController.verifyActivateDevice);
 
 export default router;

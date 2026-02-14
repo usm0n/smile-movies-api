@@ -435,10 +435,11 @@ export const requestActivateMyDevice = [
 
 export const verifyActivateDevice = async (req: Request, res: Response) => {
   try {
-    const { email, deviceId, token } = req.query;
+    const { email, deviceId, token } = req.params;
 
     if (!email || !deviceId || !token) {
-      return res.status(400).json({ message: "Invalid activation link" });
+      res.status(400).json({ message: "Invalid activation link" });
+      return
     }
 
     const q = query(
@@ -450,7 +451,8 @@ export const verifyActivateDevice = async (req: Request, res: Response) => {
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
-      return res.status(400).json({ message: "Token is invalid or has already been used" });
+      res.status(400).json({ message: "Token is invalid or has already been used" });
+      return
     }
 
     const tokenDoc = querySnapshot.docs[0];
@@ -460,14 +462,16 @@ export const verifyActivateDevice = async (req: Request, res: Response) => {
     const isExpired = Date.now() - tokenData.createdAt.toDate().getTime() > expiryTime;
 
     if (isExpired) {
-      return res.status(400).json({ message: "Activation link has expired" });
+      res.status(400).json({ message: "Activation link has expired" });
+      return
     }
 
     const userDocRef = doc(usersCollection, tokenData.uid);
     const userSnap = await getDoc(userDocRef);
 
     if (!userSnap.exists()) {
-      return res.status(404).json({ message: "User no longer exists" });
+      res.status(404).json({ message: "User no longer exists" });
+      return
     }
 
     const userData = userSnap.data() as User;
